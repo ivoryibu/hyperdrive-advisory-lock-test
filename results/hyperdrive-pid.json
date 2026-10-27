@@ -1,0 +1,11 @@
+{
+  "target": "hyperdrive",
+  "steps": [
+    {
+      "step": "backend pid across 5 sequential autocommit queries on one client",
+      "pids": [1807, 1807, 1807, 1807, 1807],
+      "distinct_backends": 1,
+      "stable": true
+    }
+  ]
+}

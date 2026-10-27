@@ -1,0 +1,15 @@
+{
+  "name": "hyperdrive-advisory-lock-test",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-16",
+  "compatibility_flags": ["nodejs_compat"],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "<your-hyperdrive-config-id>"
+    }
+  ],
+  "vars": {
+    "NEON_DIRECT_URL": "postgresql://user:password@host/db?sslmode=require"
+  }
+}

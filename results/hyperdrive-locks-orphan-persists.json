@@ -1,0 +1,19 @@
+{
+  "target": "hyperdrive",
+  "steps": [
+    {
+      "step": "pg_locks (advisory)",
+      "rows": [
+        {
+          "pid": 1897,
+          "objid": 1135096506,
+          "granted": true,
+          "state": "idle",
+          "state_change": "2026-10-27T21:04:29.272Z",
+          "application_name": "Cloudflare Hyperdrive",
+          "client_addr": "10.38.63.214"
+        }
+      ]
+    }
+  ]
+}

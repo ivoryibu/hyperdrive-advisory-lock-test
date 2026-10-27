@@ -1,0 +1,29 @@
+{
+  "target": "hyperdrive",
+  "steps": [
+    {
+      "step": "A: acquired session lock",
+      "backend_pid": 2197
+    },
+    {
+      "step": "A: after 30000ms idle (same client)",
+      "pid_before": 2197,
+      "pid_after": 2197,
+      "physical_connection_swapped": false
+    },
+    {
+      "step": "A: unlock after idle",
+      "unlocked": true,
+      "interpretation": "lock survived idle on same client"
+    },
+    {
+      "step": "A: re-acquire",
+      "ok": true
+    },
+    {
+      "step": "B: try while A idle-but-connected and holds",
+      "acquired": false,
+      "expected_if_session_locks_work": false
+    }
+  ]
+}

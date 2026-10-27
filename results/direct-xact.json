@@ -1,0 +1,37 @@
+{
+  "target": "direct-neon",
+  "key_scope": "unique per run",
+  "steps": [
+    {
+      "step": "A: BEGIN + pg_advisory_xact_lock",
+      "ok": true,
+      "lock_acquired": true,
+      "backend_pid": 1776
+    },
+    {
+      "step": "B: pg_try_advisory_xact_lock while A holds",
+      "acquired": false,
+      "expected": false,
+      "match": true
+    },
+    {
+      "step": "B: blocking pg_advisory_xact_lock with 1s lock_timeout",
+      "result": "blocked until timeout (expected)",
+      "ms": 1223,
+      "error": "canceling statement due to lock timeout",
+      "code": "55P03"
+    },
+    {
+      "step": "B: try again while A still holds",
+      "acquired": false,
+      "expected": false,
+      "match": true
+    },
+    {
+      "step": "B: try after A COMMIT",
+      "acquired": true,
+      "expected": true,
+      "match": true
+    }
+  ]
+}

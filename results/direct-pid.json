@@ -1,0 +1,11 @@
+{
+  "target": "direct-neon",
+  "steps": [
+    {
+      "step": "backend pid across 5 sequential autocommit queries on one client",
+      "pids": [1732, 1732, 1732, 1732, 1732],
+      "distinct_backends": 1,
+      "stable": true
+    }
+  ]
+}

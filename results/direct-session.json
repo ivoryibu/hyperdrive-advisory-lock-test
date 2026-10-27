@@ -1,0 +1,43 @@
+{
+  "target": "direct-neon",
+  "key_scope": "unique per run",
+  "steps": [
+    {
+      "step": "A: pg_advisory_lock (session, autocommit)",
+      "ok": true,
+      "result": "",
+      "backend_pid": 1752
+    },
+    {
+      "step": "A: backend pid on next query (same client)",
+      "pid_before": 1752,
+      "pid_after": 1752,
+      "physical_connection_swapped": false
+    },
+    {
+      "step": "A: pg_advisory_unlock in separate query, same client",
+      "unlocked": true,
+      "interpretation": "unlock worked on same session"
+    },
+    {
+      "step": "A: re-acquire session lock",
+      "acquired": true,
+      "result": ""
+    },
+    {
+      "step": "B: pg_try_advisory_lock while A connected and holds",
+      "acquired": false,
+      "expected_if_session_locks_work": false,
+      "interpretation": "lock blocked other session (exclusion works)"
+    },
+    {
+      "step": "B: try again after A disconnects",
+      "acquired": true,
+      "interpretation": "lock released when A disconnected (reset on pool return) or was never held"
+    },
+    {
+      "step": "cleanup: pg_advisory_unlock_all on fresh client",
+      "ok": true
+    }
+  ]
+}

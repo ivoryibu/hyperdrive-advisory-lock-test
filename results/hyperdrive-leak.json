@@ -1,0 +1,39 @@
+{
+  "target": "hyperdrive",
+  "steps": [
+    {
+      "step": "A: acquired session lock",
+      "backend_pid": 1897
+    },
+    {
+      "step": "A: disconnected without unlocking",
+      "backend_pid": 1897
+    },
+    {
+      "step": "probe 1",
+      "t": 258,
+      "acquired": false,
+      "advisory_locks": [
+        {
+          "pid": 1897,
+          "granted": true,
+          "state": "idle",
+          "application_name": "Cloudflare Hyperdrive"
+        }
+      ]
+    },
+    {
+      "step": "probe 2",
+      "t": 106,
+      "acquired": true,
+      "advisory_locks": [
+        {
+          "pid": 1897,
+          "granted": true,
+          "state": "idle",
+          "application_name": "Cloudflare Hyperdrive"
+        }
+      ]
+    }
+  ]
+}
