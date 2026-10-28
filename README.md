@@ -6,7 +6,7 @@ Empirical test of PostgreSQL advisory lock support through [Cloudflare Hyperdriv
 
 | Lock type | Command | Works while client connected | Correct after `COMMIT` / disconnect |
 | --- | --- | --- | --- |
-| Transaction-level | `pg_advisory_xact_lock` (also try/shared variants) | Yes — held for the transaction, blocks other sessions (`55P03` on `lock_timeout`) | Yes — released at transaction end, before the connection returns to the pool |
+| Transaction-level | `pg_advisory_xact_lock`, `pg_advisory_xact_lock_shared`, `pg_try_advisory_xact_lock`, `pg_try_advisory_xact_lock_shared` (incl. two-key `(int, int)` overloads) | Yes — held for the transaction, blocking and shared-compatible semantics correct (`55P03` on `lock_timeout`) | Yes — released at transaction end, before the connection returns to the pool |
 | Session-level | `pg_advisory_lock` | Yes — sticky backend, unlock and cross-session exclusion work | **No — the lock leaks on the pooled backend after the client disconnects** |
 
 - Hyperdrive does **not** reject any advisory lock commands: session-level locks fail silently.
@@ -29,6 +29,7 @@ Conclusion for the docs: **transaction-level advisory locks are safe to use thro
 | --- | --- |
 | `GET /pid?target=hd\|direct` | Backend pid stability across sequential autocommit queries on one client |
 | `GET /xact?target=hd\|direct` | Transaction-level lock lifecycle (`BEGIN` → block probes → `COMMIT`) |
+| `GET /xact-family?target=hd\|direct` | Full transaction-level family: shared/try variants, shared-vs-exclusive compatibility, two-key `(int, int)` overloads |
 | `GET /session?target=hd\|direct` | Session-level lock lifecycle (acquire, unlock, exclusion, disconnect) |
 | `GET /leak?target=hd\|direct` | Acquire session lock, disconnect, poll `pg_try_advisory_lock` + `pg_locks` until acquired |
 | `GET /session-idle?target=hd\|direct&idle=30000` | Session lock survival across client idle time |
@@ -57,6 +58,7 @@ Raw responses from the 2026-10-27 run are in [`results/`](./results/) (client 1�
 Key evidence:
 
 - `hyperdrive-xact.json` — transaction-level locks fully correct through Hyperdrive.
+- `hyperdrive-xact-family.json` — all four transaction-level functions (including `pg_try_advisory_xact_lock_shared` and two-key overloads) with correct shared/exclusive semantics through Hyperdrive; `direct-xact-family.json` is the matching control.
 - `hyperdrive-leak.json` — after the holder disconnects, `pg_locks` still shows the lock `granted` on an idle backend with `application_name = Cloudflare Hyperdrive`; the next probe "acquires" only because it was assigned that same pooled connection.
 - `hyperdrive-locks-orphan-persists.json` — the orphaned lock persists minutes after disconnect.
 - `hyperdrive-clean.json` — a later client assigned to the leaked backend (pid 1897) releases the orphan via `pg_advisory_unlock_all()`; sequential fresh clients map to multiple distinct backends (Hyperdrive multiplexing).

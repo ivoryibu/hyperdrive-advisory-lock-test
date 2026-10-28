@@ -1,0 +1,43 @@
+{
+  "target": "hyperdrive",
+  "key_scope": "unique per run",
+  "steps": [
+    {
+      "step": "pg_try_advisory_xact_lock_shared while A holds pg_advisory_xact_lock_shared",
+      "acquired": true,
+      "expected": true,
+      "match": true
+    },
+    {
+      "step": "pg_try_advisory_xact_lock_shared while A holds exclusive",
+      "acquired": false,
+      "expected": false,
+      "match": true
+    },
+    {
+      "step": "pg_try_advisory_xact_lock while A holds exclusive",
+      "acquired": false,
+      "expected": false,
+      "match": true
+    },
+    {
+      "step": "pg_advisory_xact_lock (blocking) while A holds shared, 1s lock_timeout",
+      "result": "blocked until timeout (expected)",
+      "ms": 1146,
+      "error": "canceling statement due to lock timeout",
+      "code": "55P03"
+    },
+    {
+      "step": "two-key (int,int) overload: pg_try_advisory_xact_lock(424242, 1337)",
+      "acquired": true,
+      "expected": true,
+      "match": true
+    },
+    {
+      "step": "two-key (int,int) overload: pg_try_advisory_xact_lock_shared(424242, 1337)",
+      "acquired": true,
+      "expected": true,
+      "match": true
+    }
+  ]
+}

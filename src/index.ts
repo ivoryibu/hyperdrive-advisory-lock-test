@@ -117,6 +117,91 @@ async function runXactTest(cs: string, ssl?: object): Promise<Step[]> {
   return steps;
 }
 
+async function runXactFamilyTest(cs: string, ssl?: object): Promise<Step[]> {
+  const steps: Step[] = [];
+  const base = Date.now() % 1000000000;
+  const kSharedShared = 1000000000 + ((base + 11) % 1000000000);
+  const kExclusive = 1000000000 + ((base + 22) % 1000000000);
+  const kSharedBlocksExclusive = 1000000000 + ((base + 33) % 1000000000);
+  let a: Client | null = null;
+  let b: Client | null = null;
+  try {
+    a = await connect(cs, ssl);
+    b = await connect(cs, ssl);
+
+    await a.query('BEGIN');
+    await a.query('SELECT pg_advisory_xact_lock_shared($1)', [kSharedShared]);
+    await b.query('BEGIN');
+    const sharedShared = await b.query('SELECT pg_try_advisory_xact_lock_shared($1) AS ok', [kSharedShared]);
+    steps.push(stepOf('pg_try_advisory_xact_lock_shared while A holds pg_advisory_xact_lock_shared', {
+      acquired: sharedShared.rows[0].ok,
+      expected: true,
+      match: sharedShared.rows[0].ok === true,
+    }));
+    await b.query('COMMIT');
+    await a.query('COMMIT');
+
+    await a.query('BEGIN');
+    await a.query('SELECT pg_advisory_xact_lock($1)', [kExclusive]);
+    const tryShared = await b.query('SELECT pg_try_advisory_xact_lock_shared($1) AS ok', [kExclusive]);
+    steps.push(stepOf('pg_try_advisory_xact_lock_shared while A holds exclusive', {
+      acquired: tryShared.rows[0].ok,
+      expected: false,
+      match: tryShared.rows[0].ok === false,
+    }));
+    const tryExclusive = await b.query('SELECT pg_try_advisory_xact_lock($1) AS ok', [kExclusive]);
+    steps.push(stepOf('pg_try_advisory_xact_lock while A holds exclusive', {
+      acquired: tryExclusive.rows[0].ok,
+      expected: false,
+      match: tryExclusive.rows[0].ok === false,
+    }));
+    await a.query('COMMIT');
+
+    await a.query('BEGIN');
+    await a.query('SELECT pg_advisory_xact_lock_shared($1)', [kSharedBlocksExclusive]);
+    const t0 = Date.now();
+    try {
+      await b.query('BEGIN');
+      await b.query("SET LOCAL lock_timeout = '1s'");
+      await b.query('SELECT pg_advisory_xact_lock($1)', [kSharedBlocksExclusive]);
+      steps.push(stepOf('pg_advisory_xact_lock (blocking) while A holds shared, 1s lock_timeout', {
+        result: 'ACQUIRED (unexpected: shared did not block exclusive)',
+        ms: Date.now() - t0,
+      }));
+      await b.query('ROLLBACK');
+    } catch (e: any) {
+      steps.push(stepOf('pg_advisory_xact_lock (blocking) while A holds shared, 1s lock_timeout', {
+        result: 'blocked until timeout (expected)',
+        ms: Date.now() - t0,
+        error: String(e?.message ?? e),
+        code: e?.code,
+      }));
+      try { await b.query('ROLLBACK'); } catch {}
+    }
+
+    const twoKey = await b.query('SELECT pg_try_advisory_xact_lock($1, $2) AS ok', [424242, 1337]);
+    steps.push(stepOf('two-key (int,int) overload: pg_try_advisory_xact_lock(424242, 1337)', {
+      acquired: twoKey.rows[0].ok,
+      expected: true,
+      match: twoKey.rows[0].ok === true,
+    }));
+    const twoKeyShared = await b.query('SELECT pg_try_advisory_xact_lock_shared($1, $2) AS ok', [424242, 1337]);
+    steps.push(stepOf('two-key (int,int) overload: pg_try_advisory_xact_lock_shared(424242, 1337)', {
+      acquired: twoKeyShared.rows[0].ok,
+      expected: true,
+      match: twoKeyShared.rows[0].ok === true,
+    }));
+    await a.query('COMMIT');
+  } catch (e: any) {
+    steps.push(stepOf('unexpected error', { error: String(e?.message ?? e), code: e?.code }));
+  } finally {
+    try { if (a) await a.query('ROLLBACK').catch(() => {}); } catch {}
+    await end(a);
+    await end(b);
+  }
+  return steps;
+}
+
 async function runSessionTest(cs: string, ssl?: object): Promise<Step[]> {
   const steps: Step[] = [];
   const k = key('session');
@@ -364,6 +449,9 @@ export default {
     if (url.pathname === '/session') {
       return json({ target: t.label, key_scope: 'unique per run', steps: await runSessionTest(t.cs, t.ssl) });
     }
+    if (url.pathname === '/xact-family') {
+      return json({ target: t.label, key_scope: 'unique per run', steps: await runXactFamilyTest(t.cs, t.ssl) });
+    }
     if (url.pathname === '/pid') {
       return json({ target: t.label, steps: await runPidTest(t.cs, t.ssl) });
     }
@@ -381,7 +469,7 @@ export default {
       return json({ target: t.label, steps: await runCleanTest(t.cs, t.ssl) });
     }
     return json({
-      usage: ['/xact?target=hd|direct', '/session?target=hd|direct', '/pid?target=hd|direct', '/locks?target=hd|direct'],
+      usage: ['/xact?target=hd|direct', '/xact-family?target=hd|direct', '/session?target=hd|direct', '/pid?target=hd|direct', '/locks?target=hd|direct'],
     });
   },
 } satisfies ExportedHandler<Env>;
