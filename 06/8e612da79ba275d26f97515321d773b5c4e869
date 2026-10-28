@@ -1,0 +1,33 @@
+README.md
+  s_ecb4e0fe3b5ec9::t_d2bcaaf794f79d 9,32,61
+results/direct-xact-family.json
+  s_037d5be6da8760::t_2eb0c2b35fba05 1-43
+results/hyperdrive-xact-family.json
+  s_037d5be6da8760::t_42d8da8199040b 1-43
+src/index.ts
+  s_ecb4e0fe3b5ec9::t_1c19dcdd624879 120-204,452-454,472
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "068e612da79ba275d26f97515321d773b5c4e869",
+  "prompts": {},
+  "sessions": {
+    "s_037d5be6da8760": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e94f818b1ffe6EmioaFcVriZRl",
+        "model": "@cf/zai-org/glm-5.3-flash"
+      },
+      "human_author": "Ivory <ivory@cloudflare.com>"
+    },
+    "s_ecb4e0fe3b5ec9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e81a1abb3ffejuVDyW7WkGytE8",
+        "model": "@cf/zai-org/glm-5.3-flash"
+      },
+      "human_author": "Ivory <ivory@cloudflare.com>"
+    }
+  }
+}
